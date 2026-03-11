@@ -1,0 +1,97 @@
+[
+    {
+        "role": "system",
+        "content": {
+            "protocol": "AISIP V1.0.0",
+            "id": "soulbot.main",
+            "name": "SoulBot Main Router",
+            "version": "1.0.0",
+            "summary": "Main entry point that routes user messages to specialized handlers.",
+            "description": "Analyzes user intent via NLU and routes to appropriate handlers: greetings, Q&A, task execution, stock analysis, or weather queries. Validates required parameters before dispatching to sub-flows.",
+            "verified_on": [
+                "Cursor",
+                "Gemini CLI"
+            ],
+            "tools": [
+                "google_search",
+                "file_system",
+                "shell",
+                "web_browser"
+            ],
+            "parameters": {
+                "ticker": {
+                    "type": "string",
+                    "description": "Stock ticker symbol (e.g., AAPL, TSLA)",
+                    "agentic_prompt": "Identify the stock ticker mentioned in the user's message.",
+                    "search_prompt": "Extract stock ticker symbol from user query."
+                },
+                "location": {
+                    "type": "string",
+                    "description": "City or region name for weather queries",
+                    "agentic_prompt": "Identify the city or location mentioned in the user's message.",
+                    "search_prompt": "Extract location name from user query."
+                }
+            },
+            "system_prompt": "STRICT ADHERENCE TO AISIP FLOW IS MANDATORY. IF 'Stock' intent -> MUST verify Ticker. IF 'Weather' intent -> MUST verify Location. DO NOT hallucinate data; always route to specialized aisip files if available. Always respond in User's Language."
+        }
+    },
+    {
+        "role": "user",
+        "content": {
+            "instruction": "RUN aisip.main",
+            "aisip": {
+                "main": {
+                    "start":         { "type": "process",  "next": ["nlu"] },
+                    "nlu":           { "type": "decision", "branches": { "greeting": "hello", "question": "answer", "task": "exec", "stock": "stock_check", "weather": "weather_check" } },
+                    "hello":         { "type": "process",  "next": ["end"] },
+                    "answer":        { "type": "process",  "next": ["end"] },
+                    "exec":          { "type": "process",  "next": ["end"] },
+                    "stock_check":   { "type": "decision", "branches": { "yes": "stock_flow", "no": "ask_ticker" } },
+                    "stock_flow":    { "type": "delegate", "delegate_to": "stock_analysis.aisip.json", "next": ["end"] },
+                    "ask_ticker":    { "type": "process",  "next": ["end"] },
+                    "weather_check": { "type": "decision", "branches": { "yes": "weather_flow", "no": "ask_location" } },
+                    "weather_flow":  { "type": "delegate", "delegate_to": "weather.aisip.json", "next": ["end"] },
+                    "ask_location":  { "type": "process",  "next": ["end"] },
+                    "end":           { "type": "end" }
+                }
+            },
+            "functions": {
+                "start": {
+                    "step1": "Receive user message input"
+                },
+                "nlu": {
+                    "step1": "Analyze user message and identify intent",
+                    "step2": "Classify into: greeting, question, task, stock, or weather"
+                },
+                "hello": {
+                    "step1": "Generate a warm, helpful greeting",
+                    "step2": "Show current timestamp and confirm AISIP version."
+                },
+                "answer": {
+                    "step1": "Respond with direct information"
+                },
+                "exec": {
+                    "step1": "Execute general tasks"
+                },
+                "stock_check": {
+                    "step1": "Verify stock ticker presence."
+                },
+                "stock_flow": {
+                    "step1": "Load and run stock_analysis.aisip.json"
+                },
+                "ask_ticker": {
+                    "step1": "Ask user for stock ticker."
+                },
+                "weather_check": {
+                    "step1": "Verify city/location presence in query."
+                },
+                "weather_flow": {
+                    "step1": "Load and run weather.aisip.json"
+                },
+                "ask_location": {
+                    "step1": "Ask user for the city or region for weather."
+                }
+            }
+        }
+    }
+]
