@@ -8,23 +8,14 @@
             "version": "1.0.0",
             "summary": "Professional stock analysis with technical, fundamental, and sentiment evaluation.",
             "description": "Performs comprehensive stock analysis including technical indicators (MA, RSI, support/resistance), fundamental data (P/E, market cap), news sentiment, SWOT matrix, and risk management strategies. Generates buy/hold/sell recommendations with price targets.",
-            "verified_on": [
-                "Cursor",
-                "Gemini CLI"
-            ],
             "tools": [
                 "google_search",
                 "shell",
                 "file_system",
                 "web_browser"
             ],
-            "parameters": {
-                "ticker": {
-                    "type": "string",
-                    "description": "Stock ticker symbol (e.g., AAPL, TSLA, GOOGL)",
-                    "agentic_prompt": "Identify the stock ticker symbol from the user's message.",
-                    "search_prompt": "Extract stock ticker symbol from user query."
-                }
+            "params": {
+                "ticker": "Stock ticker symbol (e.g., AAPL, TSLA, GOOGL)"
             },
             "system_prompt": "You are a professional stock analyst. Your task is to provide detailed stock analysis reports. Strictly follow the AISIP flow and do not skip any steps."
         }
@@ -32,19 +23,19 @@
     {
         "role": "user",
         "content": {
-            "instruction": "RUN aisip.stock_analysis",
+            "instruction": "RUN aisip.main",
+            "user_input": "{user_input}",
             "aisip": {
                 "main": {
-                    "start":             { "type": "process",  "next": ["parse"] },
-                    "parse":             { "type": "process",  "next": ["load_data_fetcher"] },
-                    "load_data_fetcher": { "type": "delegate", "delegate_to": "stock_data_fetcher.aisip.json", "next": ["data"] },
-                    "data":              { "type": "process",  "next": ["tech"] },
-                    "tech":              { "type": "process",  "next": ["sentiment"] },
-                    "sentiment":         { "type": "process",  "next": ["synthesis"] },
-                    "synthesis":         { "type": "process",  "next": ["risk"] },
-                    "risk":              { "type": "process",  "next": ["conclusion"] },
-                    "conclusion":        { "type": "process",  "next": ["end"] },
-                    "end":               { "type": "end" }
+                    "start":             { "next": ["parse"] },
+                    "parse":             { "next": ["data_fetch"] },
+                    "data_fetch":        { "next": ["tech"] },
+                    "tech":              { "next": ["sentiment"] },
+                    "sentiment":         { "next": ["synthesis"] },
+                    "synthesis":         { "next": ["risk"] },
+                    "risk":              { "next": ["conclusion"] },
+                    "conclusion":        { "next": ["end"] },
+                    "end":               {}
                 }
             },
             "functions": {
@@ -55,13 +46,8 @@
                     "step1": "Verify ticker symbol is valid and identify market (NYSE/NASDAQ/etc).",
                     "step2": "Determine asset type: Stock, ETF, Index, or other."
                 },
-                "load_data_fetcher": {
-                    "step1": "Load stock_data_fetcher.aisip.json sub-module",
-                    "step2": "Pass ticker symbol to sub-module",
-                    "step3": "Verify sub-module loaded successfully"
-                },
-                "data": {
-                    "step1": "Execute stock_data_fetcher sub-flow",
+                "data_fetch": {
+                    "step1": "RUN aisip.stock_data_fetcher",
                     "step2": "Receive data: P/E, Market Cap, 52W High/Low, current price",
                     "step3": "Verify all critical data fields are present; flag if missing."
                 },

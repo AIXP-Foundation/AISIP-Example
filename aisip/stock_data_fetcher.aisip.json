@@ -8,22 +8,13 @@
             "version": "1.0.0",
             "summary": "Sub-module for fetching real-time stock market data.",
             "description": "Fetches current price, P/E ratio, market cap, and 52-week range for a given ticker symbol. Returns structured JSON data to the parent flow (stock_analysis).",
-            "parent": "stock_analysis.aisip.json",
-            "verified_on": [
-                "Cursor",
-                "Gemini CLI"
-            ],
             "tools": [
                 "google_search",
                 "web_browser",
                 "file_system"
             ],
-            "parameters": {
-                "ticker": {
-                    "type": "string",
-                    "description": "Stock ticker symbol passed from parent flow",
-                    "agentic_prompt": "Use the ticker symbol provided by the parent stock_analysis flow."
-                }
+            "params": {
+                "ticker": "Stock ticker symbol passed from parent flow"
             },
             "system_prompt": "You are a stock data fetching specialist. Your task is to fetch real-time market data for the given ticker symbol and return it in structured format."
         }
@@ -31,22 +22,23 @@
     {
         "role": "user",
         "content": {
-            "instruction": "RUN aisip.stock_data_fetcher",
+            "instruction": "RUN aisip.main",
+            "user_input": "{user_input}",
             "aisip": {
                 "main": {
-                    "start":              { "type": "process",  "next": ["validate"] },
-                    "validate":           { "type": "decision", "branches": { "yes": "fetch_price", "no": "error" } },
-                    "fetch_price":        { "type": "process",  "next": ["fetch_fundamentals"] },
-                    "fetch_fundamentals": { "type": "process",  "next": ["format"] },
-                    "format":             { "type": "process",  "next": ["return"] },
-                    "return":             { "type": "process",  "next": ["end"] },
-                    "error":              { "type": "process",  "next": ["end"] },
-                    "end":                { "type": "end" }
+                    "start":              { "next": ["validate"] },
+                    "validate":           { "branches": { "yes": "fetch_price", "no": "error" } },
+                    "fetch_price":        { "next": ["fetch_fundamentals"] },
+                    "fetch_fundamentals": { "next": ["format"] },
+                    "format":             { "next": ["return"] },
+                    "return":             { "next": ["end"] },
+                    "error":              { "next": ["end"] },
+                    "end":                {}
                 }
             },
             "functions": {
                 "start": {
-                    "step1": "Receive ticker symbol from parent flow (stock_analysis.aisip.json)",
+                    "step1": "Receive ticker symbol from parent flow",
                     "step2": "Log: 'Fetching data for ticker: {ticker}'"
                 },
                 "validate": {
@@ -65,8 +57,8 @@
                     "step4": "If data unavailable, mark as 'N/A'"
                 },
                 "format": {
-                    "step1": "Structure data as JSON:",
-                    "step2": "{\n  \"ticker\": \"{ticker}\",\n  \"price\": \"{price}\",\n  \"change\": \"{change}\",\n  \"pe_ratio\": \"{pe}\",\n  \"market_cap\": \"{market_cap}\",\n  \"52w_high\": \"{high}\",\n  \"52w_low\": \"{low}\"\n}"
+                    "step1": "Structure data as JSON: ticker, price, change, pe_ratio, market_cap, 52w_high, 52w_low",
+                    "step2": "Verify all fields are populated"
                 },
                 "return": {
                     "step1": "Log: 'Data fetch complete for {ticker}'",
